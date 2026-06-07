@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORGE — 3D Model Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111114;
+    --surface2: #18181d;
+    --surface3: #22222a;
+    --accent: #e87c3a;
+    --accent2: #f0a060;
+    --text: #f0ede8;
+    --muted: #6b6b78;
+    --dim: #2e2e38;
+    --wire: rgba(232,124,58,0.12);
+    --wire-bright: rgba(232,124,58,0.3);
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── GRID OVERLAY ─── */
+  .grid-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(232,124,58,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,124,58,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    animation: gridPulse 6s ease-in-out infinite;
+  }
+  @keyframes gridPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3rem;
+    height: 64px;
+    border-bottom: 1px solid var(--dim);
+    background: rgba(10,10,11,0.85);
+    backdrop-filter: blur(12px);
+    animation: slideDown 0.6s ease both;
+  }
+  @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+
+  .nav-actions { display: flex; gap: 1rem; align-items: center; }
+  .btn-upload {
+    background: var(--accent);
+    color: #0a0a0b;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  .btn-upload:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-upload:active { transform: scale(0.97); }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    z-index: 5;
+    padding: 5rem 3rem 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+    overflow: hidden;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    right: -8%;
+    top: -40%;
+    width: 580px;
+    height: 580px;
+    border-radius: 50%;
+    border: 1px solid var(--wire-bright);
+    pointer-events: none;
+    animation: rotateSlow 40s linear infinite;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    right: 4%;
+    top: -10%;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    border: 1px solid var(--wire);
+    pointer-events: none;
+    animation: rotateSlow 25s linear infinite reverse;
+  }
+  @keyframes rotateSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  .hero-eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 8vw, 7rem);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    margin-bottom: 2rem;
+  }
+  h1 span { color: var(--accent); }
+
+  .hero-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 420px;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+  }
+  .stat-item {}
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
+  .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* 3D wireframe preview box */
+  .hero-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 340px;
+  }
+  .wireframe-box {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    animation: floatBox 5s ease-in-out infinite, rotateBox 20s linear infinite;
+    transform-style: preserve-3d;
+  }
+  @keyframes floatBox {
+    0%,100%{transform:translateY(0) rotateX(20deg) rotateY(45deg)}
+    50%{transform:translateY(-18px) rotateX(20deg) rotateY(45deg)}
+  }
+  @keyframes rotateBox {
+    from{transform:translateY(0) rotateX(20deg) rotateY(0deg)}
+    to{transform:translateY(0) rotateX(20deg) rotateY(360deg)}
+  }
+
+  .wire-svg {
+    width: 280px;
+    height: 280px;
+    filter: drop-shadow(0 0 20px rgba(232,124,58,0.3));
+    animation: floatBox 5s ease-in-out infinite;
+  }
+
+  /* ─── FILTER BAR ─── */
+  .section-bar {
+    position: relative;
+    z-index: 5;
+    padding: 0 3rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .filter-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+  }
+  .tag:hover, .tag.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,124,58,0.06);
+  }
+
+  .view-count {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .view-count span { color: var(--accent); }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    position: relative;
+    z-index: 5;
+    padding: 0 3rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--dim);
+  }
+
+  /* ─── MODEL GRID ─── */
+  .model-grid {
+    position: relative;
+    z-index: 5;
+    padding: 0 3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.25s, transform 0.25s;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  }
+  .model-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+  }
+  .model-card:hover .card-preview-bg { opacity: 1; }
+  .model-card:hover .card-actions { opacity: 1; transform: translateY(0); }
+
+  .card-preview {
+    height: 200px;
+    background: var(--surface2);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-preview-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(232,124,58,0.08) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  /* wireframe previews per card */
+  .preview-svg {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+  }
+  .model-card:hover .preview-svg { opacity: 1; }
+
+  .card-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    background: rgba(232,124,58,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(232,124,58,0.3);
+  }
+
+  .card-body {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+  .card-format {
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+  }
+  .card-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .card-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .card-meta-val { color: var(--text); font-weight: 500; }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--dim);
+    padding-top: 0.75rem;
+  }
+  .card-tags-row { display: flex; gap: 0.35rem; }
+  .card-tag {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+  }
+  .card-date {
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .card-actions {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(transparent, rgba(10,10,11,0.95));
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .action-btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--dim);
+    background: var(--surface3);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.primary { background: var(--accent); border-color: var(--accent); color: #0a0a0b; font-weight: 500; }
+  .action-btn.primary:hover { background: var(--accent2); }
+
+  /* ─── UPLOAD ZONE ─── */
+  .upload-zone {
+    position: relative;
+    z-index: 5;
+    margin: 0 3rem 4rem;
+    border: 1px dashed var(--dim);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+    animation: fadeUp 0.8s 0.6s ease both;
+  }
+  .upload-zone:hover, .upload-zone.dragging {
+    border-color: var(--accent);
+    background: rgba(232,124,58,0.03);
+  }
+  .upload-zone:hover .upload-icon-wrap { transform: scale(1.05); }
+
+  .upload-icon-wrap {
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    transition: transform 0.3s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  .upload-icon { width: 24px; height: 24px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+
+  .upload-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .upload-sub {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    line-height: 1.7;
+    margin-bottom: 1.25rem;
+  }
+  .upload-formats {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .fmt-pill {
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,11,0.92);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from{transform:scale(0.95) translateY(16px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+
+  .modal-header {
+    padding: 1.5rem 2rem 1rem;
+    border-bottom: 1px solid var(--dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .modal-eyebrow {
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .modal-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+  .modal-close {
+    background: none;
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-size: 1.2rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  .modal-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  .modal-body { padding: 1.5rem 2rem; }
+  .modal-preview {
+    height: 260px;
+    background: var(--surface2);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  .modal-preview-svg { width: 100%; height: 100%; opacity: 0.7; }
+
+  .modal-specs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--dim);
+    margin-bottom: 1.5rem;
+  }
+  .spec-cell {
+    background: var(--surface2);
+    padding: 0.85rem 1rem;
+  }
+  .spec-label { font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+  .spec-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; }
+
+  .modal-actions { display: flex; gap: 0.75rem; }
+  .modal-btn {
+    flex: 1;
+    padding: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px solid var(--dim);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+  .modal-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(232,124,58,0.05); }
+  .modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #0a0a0b; font-weight: 500; }
+  .modal-btn.primary:hover { background: var(--accent2); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    position: relative;
+    z-index: 5;
+    padding: 2rem 3rem;
+    border-top: 1px solid var(--dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="grid-overlay" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <span>FORGE</span>
+    <div class="logo-dot"></div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#">Vault</a></li>
+    <li><a href="#">Collections</a></li>
+    <li><a href="#">Shared</a></li>
+    <li><a href="#">Settings</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn-upload" onclick="document.querySelector('.upload-zone').scrollIntoView({behavior:'smooth'})">+ Upload Model</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Your personal model archive</div>
+    <h1>YOUR<br><span>FORGE</span><br>VAULT</h1>
+    <p class="hero-sub">A precision-built archive for 3D modelers. Drop your meshes, organize by project, and access every model from anywhere — no more hunting through downloads.</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num" id="stat-models">12</div>
+        <div class="stat-label">Models Stored</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">847MB</div>
+        <div class="stat-label">Vault Size</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Collections</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <svg class="wire-svg" viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <style>
+          .wl { stroke: #e87c3a; stroke-width: 0.8; fill: none; opacity: 0.5; }
+          .wlb { stroke: #e87c3a; stroke-width: 1.5; fill: none; opacity: 0.9; }
+          .wlf { stroke: #f0a060; stroke-width: 0.5; fill: none; opacity: 0.25; }
+        </style>
+      </defs>
+      <!-- Isometric cube wireframe -->
+      <!-- Front face -->
+      <polygon class="wl" points="140,60 220,103 220,190 140,233 60,190 60,103"/>
+      <!-- Inner structure lines -->
+      <line class="wl" x1="140" y1="60" x2="140" y2="147"/>
+      <line class="wl" x1="220" y1="103" x2="140" y2="147"/>
+      <line class="wl" x1="60" y1="103" x2="140" y2="147"/>
+      <line class="wl" x1="220" y1="190" x2="140" y2="147"/>
+      <line class="wl" x1="60" y1="190" x2="140" y2="147"/>
+      <line class="wl" x1="140" y1="233" x2="140" y2="147"/>
+      <!-- Outer bright edges -->
+      <line class="wlb" x1="140" y1="60" x2="220" y2="103"/>
+      <line class="wlb" x1="220" y1="103" x2="220" y2="190"/>
+      <line class="wlb" x1="140" y1="60" x2="60" y2="103"/>
+      <!-- Sub grid lines -->
+      <line class="wlf" x1="100" y1="80" x2="180" y2="80"/>
+      <line class="wlf" x1="100" y1="80" x2="60" y2="125"/>
+      <line class="wlf" x1="180" y1="80" x2="220" y2="125"/>
+      <line class="wlf" x1="60" y1="125" x2="60" y2="170"/>
+      <line class="wlf" x1="220" y1="125" x2="220" y2="170"/>
+      <line class="wlf" x1="60" y1="170" x2="100" y2="213"/>
+      <line class="wlf" x1="220" y1="170" x2="180" y2="213"/>
+      <line class="wlf" x1="100" y1="213" x2="180" y2="213"/>
+      <!-- Vertex dots -->
+      <circle cx="140" cy="60" r="3" fill="#e87c3a" opacity="0.9"/>
+      <circle cx="220" cy="103" r="3" fill="#e87c3a" opacity="0.9"/>
+      <circle cx="220" cy="190" r="3" fill="#e87c3a" opacity="0.9"/>
+      <circle cx="140" cy="233" r="3" fill="#e87c3a" opacity="0.9"/>
+      <circle cx="60" cy="190" r="3" fill="#e87c3a" opacity="0.9"/>
+      <circle cx="60" cy="103" r="3" fill="#e87c3a" opacity="0.9"/>
+      <circle cx="140" cy="147" r="4" fill="#f0a060" opacity="1"/>
+      <!-- Animated scan line -->
+      <line x1="60" y1="147" x2="220" y2="147" stroke="#e87c3a" stroke-width="0.5" opacity="0.6">
+        <animate attributeName="y1" values="80;220;80" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="y2" values="80;220;80" dur="4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="4s" repeatCount="indefinite"/>
+      </line>
+    </svg>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="section-bar">
+  <div class="filter-tags">
+    <button class="tag active" onclick="filterModels('all', this)">All</button>
+    <button class="tag" onclick="filterModels('character', this)">Characters</button>
+    <button class="tag" onclick="filterModels('environment', this)">Environments</button>
+    <button class="tag" onclick="filterModels('prop', this)">Props</button>
+    <button class="tag" onclick="filterModels('vehicle', this)">Vehicles</button>
+    <button class="tag" onclick="filterModels('architecture', this)">Architecture</button>
+  </div>
+  <div class="view-count">Showing <span id="shown-count">12</span> of 12 models</div>
+</div>
+
+<div class="section-header">
+  <span class="section-title">Model Vault</span>
+  <div class="section-line"></div>
+</div>
+
+<!-- MODEL GRID -->
+<div class="model-grid" id="model-grid">
+  <!-- Cards injected by JS -->
+</div>
+
+<!-- UPLOAD ZONE -->
+<div class="section-header">
+  <span class="section-title">Add to Vault</span>
+  <div class="section-line"></div>
+</div>
+
+<div class="upload-zone" id="upload-zone" onclick="handleUploadClick()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+  <div class="upload-icon-wrap">
+    <svg class="upload-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17,8 12,3 7,8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  </div>
+  <div class="upload-title">Drop your models here</div>
+  <p class="upload-sub">Drag & drop files directly into your vault<br>or click to browse from your file system</p>
+  <div class="upload-formats">
+    <span class="fmt-pill">.OBJ</span>
+    <span class="fmt-pill">.FBX</span>
+    <span class="fmt-pill">.STL</span>
+    <span class="fmt-pill">.GLTF</span>
+    <span class="fmt-pill">.GLB</span>
+    <span class="fmt-pill">.BLEND</span>
+    <span class="fmt-pill">.3DS</span>
+    <span class="fmt-pill">.DAE</span>
+    <span class="fmt-pill">.USD</span>
+  </div>
+  <input type="file" id="file-input" style="display:none" multiple accept=".obj,.fbx,.stl,.gltf,.glb,.blend,.3ds,.dae,.usd">
+</div>
+
+<footer>
+  <span>FORGE VAULT — v0.9.1</span>
+  <span>Built for 3D modelers &bull; All models stored locally</span>
+  <span>0 / ∞ storage used</span>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-eyebrow" id="modal-format">OBJ</div>
+        <div class="modal-name" id="modal-name">Model Name</div>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-preview">
+        <svg class="modal-preview-svg" viewBox="0 0 700 260" id="modal-svg" aria-hidden="true"></svg>
+      </div>
+      <div class="modal-specs">
+        <div class="spec-cell">
+          <div class="spec-label">Polygons</div>
+          <div class="spec-val" id="m-poly">—</div>
+        </div>
+        <div class="spec-cell">
+          <div class="spec-label">Vertices</div>
+          <div class="spec-val" id="m-vert">—</div>
+        </div>
+        <div class="spec-cell">
+          <div class="spec-label">File Size</div>
+          <div class="spec-val" id="m-size">—</div>
+        </div>
+        <div class="spec-cell">
+          <div class="spec-label">Added</div>
+          <div class="spec-val" id="m-date">—</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn">Share Link</button>
+        <button class="modal-btn">Export Copy</button>
+        <button class="modal-btn">Move to Collection</button>
+        <button class="modal-btn primary">Download</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const models = [
+  { id:1, name:"Mech Suit Mk.IV", format:"FBX", category:"character", polys:"142K", verts:"89K", size:"38.2MB", date:"Jun 04", tag1:"character", tag2:"hard-surface", shape:"mech" },
+  { id:2, name:"Desert Ruins Set", format:"OBJ", category:"environment", polys:"67K", verts:"42K", size:"14.8MB", date:"Jun 02", tag1:"environment", tag2:"stylized", shape:"arch" },
+  { id:3, name:"Low-poly Hatchback", format:"GLTF", category:"vehicle", polys:"8.4K", verts:"5.1K", size:"2.1MB", date:"May 31", tag1:"vehicle", tag2:"low-poly", shape:"box" },
+  { id:4, name:"Sci-Fi Corridor", format:"BLEND", category:"architecture", polys:"201K", verts:"130K", size:"52.7MB", date:"May 29", tag1:"architecture", tag2:"sci-fi", shape:"corridor" },
+  { id:5, name:"Fantasy Sword", format:"STL", category:"prop", polys:"12K", verts:"7.8K", size:"0.9MB", date:"May 27", tag1:"prop", tag2:"game-ready", shape:"sword" },
+  { id:6, name:"Modular City Block", format:"FBX", category:"environment", polys:"318K", verts:"205K", size:"88.4MB", date:"May 24", tag1:"environment", tag2:"modular", shape:"city" },
+  { id:7, name:"Creature Rig Alpha", format:"BLEND", category:"character", polys:"95K", verts:"61K", size:"24.1MB", date:"May 22", tag1:"character", tag2:"rigged", shape:"orb" },
+  { id:8, name:"Industrial Crane", format:"OBJ", category:"vehicle", polys:"44K", verts:"28K", size:"9.3MB", date:"May 20", tag1:"vehicle", tag2:"industrial", shape:"mech" },
+  { id:9, name:"Mossy Rock Pack", format:"GLB", category:"environment", polys:"22K", verts:"14K", size:"5.6MB", date:"May 18", tag1:"environment", tag2:"organic", shape:"rock" },
+  { id:10, name:"Helmet v3", format:"OBJ", category:"prop", polys:"55K", verts:"34K", size:"7.2MB", date:"May 15", tag1:"prop", tag2:"hard-surface", shape:"dome" },
+  { id:11, name:"Temple Exterior", format:"FBX", category:"architecture", polys:"178K", verts:"115K", size:"41.0MB", date:"May 12", tag1:"architecture", tag2:"historical", shape:"arch" },
+  { id:12, name:"Sci-Fi Pistol", format:"STL", category:"prop", polys:"18K", verts:"11K", size:"1.4MB", date:"May 10", tag1:"prop", tag2:"game-ready", shape:"sword" },
+];
+
+const wireShapes = {
+  mech: (w,h) => `
+    <line x1="${w*.5}" y1="${h*.15}" x2="${w*.7}" y2="${h*.35}" stroke="#e87c3a" stroke-width="1.2" opacity="0.8"/>
+    <line x1="${w*.5}" y1="${h*.15}" x2="${w*.3}" y2="${h*.35}" stroke="#e87c3a" stroke-width="1.2" opacity="0.8"/>
+    <line x1="${w*.3}" y1="${h*.35}" x2="${w*.25}" y2="${h*.65}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <line x1="${w*.7}" y1="${h*.35}" x2="${w*.75}" y2="${h*.65}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <line x1="${w*.25}" y1="${h*.65}" x2="${w*.75}" y2="${h*.65}" stroke="#e87c3a" stroke-width="1" opacity="0.7"/>
+    <line x1="${w*.3}" y1="${h*.35}" x2="${w*.7}" y2="${h*.35}" stroke="#e87c3a" stroke-width="1" opacity="0.7"/>
+    <line x1="${w*.5}" y1="${h*.15}" x2="${w*.5}" y2="${h*.85}" stroke="#e87c3a" stroke-width="0.5" opacity="0.3"/>
+    <line x1="${w*.25}" y1="${h*.65}" x2="${w*.35}" y2="${h*.85}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <line x1="${w*.75}" y1="${h*.65}" x2="${w*.65}" y2="${h*.85}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <circle cx="${w*.5}" cy="${h*.15}" r="4" fill="#e87c3a" opacity="0.9"/>
+    <circle cx="${w*.5}" cy="${h*.5}" r="3" fill="#f0a060" opacity="0.7"/>
+  `,
+  arch: (w,h) => `
+    <path d="M${w*.2},${h*.8} L${w*.2},${h*.4} Q${w*.5},${h*.1} ${w*.8},${h*.4} L${w*.8},${h*.8} Z" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.7"/>
+    <line x1="${w*.35}" y1="${h*.8}" x2="${w*.35}" y2="${h*.48}" stroke="#e87c3a" stroke-width="0.7" opacity="0.5"/>
+    <line x1="${w*.65}" y1="${h*.8}" x2="${w*.65}" y2="${h*.48}" stroke="#e87c3a" stroke-width="0.7" opacity="0.5"/>
+    <line x1="${w*.2}" y1="${h*.6}" x2="${w*.8}" y2="${h*.6}" stroke="#e87c3a" stroke-width="0.5" opacity="0.4"/>
+    <circle cx="${w*.5}" cy="${h*.25}" r="3" fill="#e87c3a" opacity="0.9"/>
+  `,
+  box: (w,h) => `
+    <rect x="${w*.25}" y="${h*.3}" width="${w*.5}" height="${h*.45}" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.7"/>
+    <polygon points="${w*.25},${h*.3} ${w*.38},${h*.18} ${w*.88},${h*.18} ${w*.75},${h*.3}" stroke="#e87c3a" stroke-width="0.8" fill="none" opacity="0.6"/>
+    <line x1="${w*.75}" y1="${h*.3}" x2="${w*.88}" y2="${h*.18}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <line x1="${w*.88}" y1="${h*.18}" x2="${w*.88}" y2="${h*.63}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <line x1="${w*.88}" y1="${h*.63}" x2="${w*.75}" y2="${h*.75}" stroke="#e87c3a" stroke-width="0.8" opacity="0.6"/>
+    <line x1="${w*.5}" y1="${h*.3}" x2="${w*.5}" y2="${h*.75}" stroke="#e87c3a" stroke-width="0.4" opacity="0.3"/>
+    <circle cx="${w*.25}" cy="${h*.3}" r="2.5" fill="#e87c3a" opacity="0.9"/>
+    <circle cx="${w*.75}" cy="${h*.3}" r="2.5" fill="#e87c3a" opacity="0.9"/>
+  `,
+  corridor: (w,h) => `
+    <rect x="${w*.2}" y="${h*.2}" width="${w*.6}" height="${h*.6}" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.7"/>
+    <rect x="${w*.3}" y="${h*.3}" width="${w*.4}" height="${h*.4}" stroke="#e87c3a" stroke-width="0.8" fill="none" opacity="0.5"/>
+    <line x1="${w*.2}" y1="${h*.2}" x2="${w*.3}" y2="${h*.3}" stroke="#e87c3a" stroke-width="0.7" opacity="0.5"/>
+    <line x1="${w*.8}" y1="${h*.2}" x2="${w*.7}" y2="${h*.3}" stroke="#e87c3a" stroke-width="0.7" opacity="0.5"/>
+    <line x1="${w*.2}" y1="${h*.8}" x2="${w*.3}" y2="${h*.7}" stroke="#e87c3a" stroke-width="0.7" opacity="0.5"/>
+    <line x1="${w*.8}" y1="${h*.8}" x2="${w*.7}" y2="${h*.7}" stroke="#e87c3a" stroke-width="0.7" opacity="0.5"/>
+    <line x1="${w*.5}" y1="${h*.2}" x2="${w*.5}" y2="${h*.3}" stroke="#f0a060" stroke-width="1.2" opacity="0.8"/>
+  `,
+  sword: (w,h) => `
+    <line x1="${w*.5}" y1="${h*.1}" x2="${w*.5}" y2="${h*.85}" stroke="#e87c3a" stroke-width="1.5" opacity="0.9"/>
+    <line x1="${w*.5}" y1="${h*.1}" x2="${w*.55}" y2="${h*.65}" stroke="#e87c3a" stroke-width="0.5" opacity="0.5"/>
+    <line x1="${w*.5}" y1="${h*.1}" x2="${w*.45}" y2="${h*.65}" stroke="#e87c3a" stroke-width="0.5" opacity="0.5"/>
+    <line x1="${w*.25}" y1="${h*.58}" x2="${w*.75}" y2="${h*.58}" stroke="#e87c3a" stroke-width="1.2" opacity="0.8"/>
+    <line x1="${w*.35}" y1="${h*.8}" x2="${w*.65}" y2="${h*.8}" stroke="#e87c3a" stroke-width="0.8" opacity="0.5"/>
+    <circle cx="${w*.5}" cy="${h*.1}" r="3" fill="#e87c3a" opacity="0.9"/>
+    <circle cx="${w*.5}" cy="${h*.88}" r="5" fill="none" stroke="#e87c3a" stroke-width="1" opacity="0.6"/>
+  `,
+  city: (w,h) => `
+    <rect x="${w*.15}" y="${h*.5}" width="${w*.18}" height="${h*.4}" stroke="#e87c3a" stroke-width="0.8" fill="none" opacity="0.6"/>
+    <rect x="${w*.38}" y="${h*.25}" width="${w*.22}" height="${h*.65}" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.8"/>
+    <rect x="${w*.65}" y="${h*.4}" width="${w*.2}" height="${h*.5}" stroke="#e87c3a" stroke-width="0.8" fill="none" opacity="0.6"/>
+    <line x1="${w*.15}" y1="${h*.9}" x2="${w*.85}" y2="${h*.9}" stroke="#e87c3a" stroke-width="0.5" opacity="0.4"/>
+    <line x1="${w*.49}" y1="${h*.25}" x2="${w*.49}" y2="${h*.15}" stroke="#f0a060" stroke-width="1.5" opacity="0.9"/>
+    <circle cx="${w*.49}" cy="${h*.13}" r="2.5" fill="#f0a060" opacity="0.9"/>
+  `,
+  orb: (w,h) => `
+    <ellipse cx="${w*.5}" cy="${h*.5}" rx="${w*.3}" ry="${h*.38}" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.7"/>
+    <ellipse cx="${w*.5}" cy="${h*.5}" rx="${w*.3}" ry="${h*.1}" stroke="#e87c3a" stroke-width="0.6" fill="none" opacity="0.5"/>
+    <line x1="${w*.2}" y1="${h*.5}" x2="${w*.8}" y2="${h*.5}" stroke="#e87c3a" stroke-width="0.5" opacity="0.4"/>
+    <line x1="${w*.5}" y1="${h*.12}" x2="${w*.5}" y2="${h*.88}" stroke="#e87c3a" stroke-width="0.5" opacity="0.4"/>
+    <ellipse cx="${w*.5}" cy="${h*.5}" rx="${w*.15}" ry="${h*.2}" stroke="#f0a060" stroke-width="0.5" fill="none" opacity="0.4"/>
+    <circle cx="${w*.5}" cy="${h*.5}" r="3" fill="#f0a060" opacity="0.9"/>
+  `,
+  rock: (w,h) => `
+    <polygon points="${w*.3},${h*.7} ${w*.2},${h*.5} ${w*.35},${h*.25} ${w*.55},${h*.2} ${w*.75},${h*.35} ${w*.8},${h*.6} ${w*.65},${h*.8} ${w*.45},${h*.82}" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.7"/>
+    <line x1="${w*.35}" y1="${h*.25}" x2="${w*.55}" y2="${h*.55}" stroke="#e87c3a" stroke-width="0.6" opacity="0.4"/>
+    <line x1="${w*.75}" y1="${h*.35}" x2="${w*.55}" y2="${h*.55}" stroke="#e87c3a" stroke-width="0.6" opacity="0.4"/>
+    <line x1="${w*.3}" y1="${h*.7}" x2="${w*.55}" y2="${h*.55}" stroke="#e87c3a" stroke-width="0.6" opacity="0.4"/>
+    <circle cx="${w*.55}" cy="${h*.55}" r="3" fill="#e87c3a" opacity="0.8"/>
+  `,
+  dome: (w,h) => `
+    <path d="M${w*.2},${h*.65} Q${w*.2},${h*.2} ${w*.5},${h*.18} Q${w*.8},${h*.2} ${w*.8},${h*.65}" stroke="#e87c3a" stroke-width="1" fill="none" opacity="0.8"/>
+    <line x1="${w*.2}" y1="${h*.65}" x2="${w*.8}" y2="${h*.65}" stroke="#e87c3a" stroke-width="1.2" opacity="0.8"/>
+    <ellipse cx="${w*.5}" cy="${h*.65}" rx="${w*.3}" ry="${h*.06}" stroke="#e87c3a" stroke-width="0.6" fill="none" opacity="0.5"/>
+    <line x1="${w*.5}" y1="${h*.18}" x2="${w*.5}" y2="${h*.65}" stroke="#e87c3a" stroke-width="0.4" opacity="0.3"/>
+    <path d="M${w*.3},${h*.4} Q${w*.5},${h*.36} ${w*.7},${h*.4}" stroke="#e87c3a" stroke-width="0.5" fill="none" opacity="0.4"/>
+    <circle cx="${w*.5}" cy="${h*.18}" r="3" fill="#f0a060" opacity="0.9"/>
+  `
+};
+
+let activeFilter = 'all';
+
+function renderCards(list) {
+  const grid = document.getElementById('model-grid');
+  grid.innerHTML = '';
+  document.getElementById('shown-count').textContent = list.length;
+  list.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'model-card';
+    card.style.animationDelay = `${i * 0.06}s`;
+    card.innerHTML = `
+      <div class="card-preview">
+        <div class="card-preview-bg"></div>
+        <svg class="preview-svg" viewBox="0 0 280 200" xmlns="http://www.w3.org/2000/svg">
+          ${wireShapes[m.shape](280, 200)}
+        </svg>
+        <span class="card-badge">${m.format}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-format">${m.format} · ${m.category}</div>
+        <div class="card-name">${m.name}</div>
+        <div class="card-meta">
+          <div class="card-meta-item"><span class="card-meta-val">${m.polys}</span><span>Polygons</span></div>
+          <div class="card-meta-item"><span class="card-meta-val">${m.verts}</span><span>Vertices</span></div>
+          <div class="card-meta-item"><span class="card-meta-val">${m.size}</span><span>Size</span></div>
+        </div>
+        <div class="card-footer">
+          <div class="card-tags-row"><span class="card-tag">${m.tag1}</span><span class="card-tag">${m.tag2}</span></div>
+          <span class="card-date">${m.date}</span>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="action-btn" onclick="event.stopPropagation()">Share</button>
+        <button class="action-btn" onclick="event.stopPropagation()">Export</button>
+        <button class="action-btn primary" onclick="event.stopPropagation()">Download</button>
+      </div>
+    `;
+    card.addEventListener('click', () => openModal(m));
+    grid.appendChild(card);
+  });
+}
+
+function filterModels(cat, btn) {
+  activeFilter = cat;
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = cat === 'all' ? models : models.filter(m => m.category === cat);
+  renderCards(filtered);
+}
+
+function openModal(m) {
+  document.getElementById('modal-format').textContent = m.format;
+  document.getElementById('modal-name').textContent = m.name;
+  document.getElementById('m-poly').textContent = m.polys;
+  document.getElementById('m-vert').textContent = m.verts;
+  document.getElementById('m-size').textContent = m.size;
+  document.getElementById('m-date').textContent = m.date;
+  const svg = document.getElementById('modal-svg');
+  svg.innerHTML = wireShapes[m.shape](700, 260);
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) document.getElementById('modal').classList.remove('open');
+}
+function closeModalBtn() { document.getElementById('modal').classList.remove('open'); }
+
+function handleUploadClick() { document.getElementById('file-input').click(); }
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('dragging');
+}
+function handleDragLeave() {
+  document.getElementById('upload-zone').classList.remove('dragging');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragging');
+  const files = [...e.dataTransfer.files];
+  addFilesToVault(files);
+}
+
+document.getElementById('file-input').addEventListener('change', function() {
+  addFilesToVault([...this.files]);
+});
+
+function addFilesToVault(files) {
+  files.forEach(file => {
+    const ext = file.name.split('.').pop().toUpperCase();
+    const size = (file.size / (1024*1024)).toFixed(1) + 'MB';
+    const shapes = Object.keys(wireShapes);
+    const newModel = {
+      id: models.length + 1,
+      name: file.name.replace(/\.[^.]+$/, ''),
+      format: ext,
+      category: 'prop',
+      polys: Math.round(Math.random()*200 + 5) + 'K',
+      verts: Math.round(Math.random()*120 + 3) + 'K',
+      size: size,
+      date: 'Just now',
+      tag1: 'uploaded',
+      tag2: 'new',
+      shape: shapes[Math.floor(Math.random()*shapes.length)]
+    };
+    models.unshift(newModel);
+  });
+  document.getElementById('stat-models').textContent = models.length;
+  const filtered = activeFilter === 'all' ? models : models.filter(m => m.category === activeFilter);
+  renderCards(filtered);
+}
+
+renderCards(models);
+</script>
+</body>
+</html>
